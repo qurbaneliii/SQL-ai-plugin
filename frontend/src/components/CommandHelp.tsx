@@ -1,4 +1,5 @@
 import type { ChatCommandsResponse } from "../api/types";
+import { EmptyState } from "./EmptyState";
 
 interface CommandHelpProps {
   commands?: ChatCommandsResponse;
@@ -13,7 +14,7 @@ export function CommandHelp({ commands }: CommandHelpProps) {
           <p>Quick intent routing helpers.</p>
         </div>
       </div>
-      {!commands ? <div className="empty-state">Loading command help...</div> : null}
+      {!commands ? <EmptyState title="Loading commands" /> : null}
       {commands?.commands.map((item) => (
         <div className="command-row" key={item.command}>
           <code>{item.command}</code>

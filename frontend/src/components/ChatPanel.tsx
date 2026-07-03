@@ -1,60 +1,41 @@
-import { useState } from "react";
-
 import type { ChatEntry } from "../state/appStore";
 import { MessageBubble } from "./MessageBubble";
+import { PromptInput } from "./PromptInput";
+import { StatusBadge } from "./StatusBadge";
 
 interface ChatPanelProps {
   messages: ChatEntry[];
   autoRun: boolean;
+  demoMode: boolean;
+  loading?: boolean;
   onToggleAutoRun: (value: boolean) => void;
   onSend: (message: string) => Promise<void>;
-  onAction: (actionType: string) => void;
+  onAction: (actionType: string, sql?: string | null) => void;
 }
 
-export function ChatPanel({ messages, autoRun, onToggleAutoRun, onSend, onAction }: ChatPanelProps) {
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-
-  async function submit() {
-    if (!message.trim()) {
-      return;
-    }
-    setSending(true);
-    try {
-      await onSend(message);
-      setMessage("");
-    } finally {
-      setSending(false);
-    }
-  }
-
+export function ChatPanel({ messages, autoRun, demoMode, loading, onToggleAutoRun, onSend, onAction }: ChatPanelProps) {
   return (
     <div className="panel chat-panel">
       <div className="panel-header">
         <div>
-          <h2>Chat</h2>
+          <h2>Copilot Chat</h2>
           <p>Natural-language SQL copilot workflow.</p>
         </div>
-        <label className="toggle">
-          <input type="checkbox" checked={autoRun} onChange={(e) => onToggleAutoRun(e.target.checked)} />
-          Auto-run safe SQL
-        </label>
+        <div className="panel-actions">
+          {demoMode ? <StatusBadge label="Demo Mode" tone="demo" /> : <StatusBadge label="Backend Mode" tone="success" />}
+          <label className="toggle">
+            <input type="checkbox" checked={autoRun} onChange={(e) => onToggleAutoRun(e.target.checked)} />
+            Auto-run safe SQL
+          </label>
+        </div>
       </div>
       <div className="message-list">
         {messages.map((entry) => (
           <MessageBubble key={entry.id} entry={entry} onAction={onAction} />
         ))}
+        {loading ? <div className="typing-state">Copilot is working...</div> : null}
       </div>
-      <div className="chat-input-row">
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Try: Show me the top 10 customers by revenue"
-        />
-        <button className="primary-button" onClick={submit} disabled={sending}>
-          {sending ? "Sending..." : "Send"}
-        </button>
-      </div>
+      <PromptInput disabled={loading} onSend={onSend} />
     </div>
   );
 }

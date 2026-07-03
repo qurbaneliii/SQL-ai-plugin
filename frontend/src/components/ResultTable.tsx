@@ -1,4 +1,7 @@
 import type { QueryExecutionResponse } from "../api/types";
+import { formatDuration, formatValue } from "../utils/formatters";
+import { EmptyState } from "./EmptyState";
+import { StatusBadge } from "./StatusBadge";
 
 interface ResultTableProps {
   result?: QueryExecutionResponse;
@@ -13,18 +16,20 @@ export function ResultTable({ result, onSummarize }: ResultTableProps) {
           <h2>Results</h2>
           <p>Read-only query output.</p>
         </div>
-        <button className="secondary-button" onClick={onSummarize} disabled={!result}>
-          Summarize
-        </button>
+        <div className="panel-actions">
+          {result ? <StatusBadge label={result.truncated ? "Truncated" : "Complete"} tone={result.truncated ? "warning" : "success"} /> : null}
+          <button className="secondary-button" onClick={onSummarize} disabled={!result}>
+            Summarize
+          </button>
+        </div>
       </div>
-      {!result ? <div className="empty-state">No query results yet.</div> : null}
+      {!result ? <EmptyState title="No result preview" detail="Run safe read-only SQL, or use demo mode sample results." /> : null}
       {result ? (
         <>
           <div className="result-meta">
             <span>Rows: {result.row_count}</span>
             <span>Limit: {result.row_limit}</span>
-            <span>Time: {result.execution_time_ms} ms</span>
-            <span>{result.truncated ? "Truncated" : "Complete"}</span>
+            <span>Time: {formatDuration(result.execution_time_ms)}</span>
           </div>
           <div className="table-wrap">
             <table>
@@ -39,7 +44,7 @@ export function ResultTable({ result, onSummarize }: ResultTableProps) {
                 {result.rows.map((row, index) => (
                   <tr key={index}>
                     {result.columns.map((column) => (
-                      <td key={column}>{String(row[column] ?? "")}</td>
+                      <td key={column}>{formatValue(row[column])}</td>
                     ))}
                   </tr>
                 ))}

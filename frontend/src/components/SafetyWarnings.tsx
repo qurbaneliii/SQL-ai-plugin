@@ -1,4 +1,6 @@
 import type { SQLValidationResponse } from "../api/types";
+import { EmptyState } from "./EmptyState";
+import { StatusBadge } from "./StatusBadge";
 
 interface SafetyWarningsProps {
   safety?: SQLValidationResponse;
@@ -12,16 +14,16 @@ export function SafetyWarnings({ safety }: SafetyWarningsProps) {
           <h2>Safety</h2>
           <p>Deterministic validation before execution.</p>
         </div>
+        {safety ? <StatusBadge label={safety.is_readonly ? "Read-only" : "Blocked"} tone={safety.is_readonly ? "success" : "danger"} /> : null}
       </div>
-      {!safety ? <div className="empty-state">Validate SQL to inspect safety warnings.</div> : null}
+      {!safety ? <EmptyState title="No safety check yet" detail="Validate SQL before running read-only queries." /> : null}
       {safety ? (
         <div className={`safety-box ${safety.risk_level}`}>
           <div>Risk: {safety.risk_level}</div>
-          <div>Valid: {safety.is_valid ? "yes" : "no"}</div>
-          <div>Read-only: {safety.is_readonly ? "yes" : "no"}</div>
+          <div>Statement: {safety.detected_statement_type}</div>
           {safety.blocked_reason ? <div>Blocked: {safety.blocked_reason}</div> : null}
           {safety.warnings.length ? (
-            <ul>
+            <ul className="warning-list">
               {safety.warnings.map((warning) => (
                 <li key={warning}>{warning}</li>
               ))}

@@ -16,9 +16,12 @@ export interface ChatEntry {
   sql?: string | null;
   actions?: Array<{ type: string; label: string }>;
   provider?: string;
+  warnings?: string[];
 }
 
 export interface AppState {
+  demoMode: boolean;
+  backendOnline: boolean;
   providerMode: ProviderMode;
   databaseUrl: string;
   connection?: DatabaseConnectResponse;
@@ -37,6 +40,8 @@ export interface AppState {
 
 export function initialState(): AppState {
   return {
+    demoMode: false,
+    backendOnline: false,
     providerMode: "auto",
     databaseUrl: "",
     currentSql: "",
@@ -44,7 +49,8 @@ export function initialState(): AppState {
       {
         id: "welcome",
         role: "assistant",
-        message: "Ask for SQL generation, explanation, fixes, schema help, read-only execution, or result summaries.",
+        message:
+          "Ask for SQL generation, explanation, fixes, schema help, read-only execution, or result summaries. Generated SQL stays review-first and never auto-runs unless you explicitly enable it.",
       },
     ],
     selectedSchemas: [],
