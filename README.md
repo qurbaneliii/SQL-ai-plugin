@@ -36,6 +36,8 @@ The backend exposes `/health`, `/api/llm/status`, `/api/db/*`, `/api/sql/*`, `/a
 
 ## Frontend Setup
 
+Requires Node.js 20.19+ or 22.12+.
+
 1. `cd frontend`
 2. `npm install`
 3. `copy .env.example .env` on Windows, or `cp .env.example .env` on macOS/Linux

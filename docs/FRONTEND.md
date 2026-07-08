@@ -77,6 +77,8 @@ Do not add OpenAI keys, database passwords, or other secrets to frontend env fil
 
 ## Local Development
 
+Vite 8 requires Node.js 20.19+ or 22.12+.
+
 ```bash
 cd frontend
 npm install

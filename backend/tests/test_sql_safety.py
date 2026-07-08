@@ -1,3 +1,5 @@
+import pytest
+
 from app.services.sql_safety import SQLSafetyValidator
 from app.settings import Settings
 
@@ -85,3 +87,25 @@ def test_side_effect_function_blocked() -> None:
 def test_enforce_limit_reduces_large_limit() -> None:
     limited = validator.enforce_limit("SELECT id FROM users LIMIT 5000", 25)
     assert "LIMIT 25" in limited
+
+
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "GRANT SELECT ON users TO app_user",
+        "REVOKE SELECT ON users FROM app_user",
+        "CALL refresh_cache()",
+        "DO $$ BEGIN RAISE NOTICE 'x'; END $$",
+        "VACUUM users",
+        "SET ROLE admin",
+        "CREATE FUNCTION x() RETURNS int LANGUAGE sql SECURITY DEFINER AS $$ SELECT 1 $$",
+    ],
+)
+def test_additional_admin_or_procedural_sql_blocked(sql: str) -> None:
+    result = validator.validate(sql)
+    assert result.is_valid is False
+
+
+def test_comment_obfuscation_warning() -> None:
+    result = validator.validate("SELECT id FROM users -- inspect\nLIMIT 10")
+    assert any("comments" in warning.lower() for warning in result.warnings)

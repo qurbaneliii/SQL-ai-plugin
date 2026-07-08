@@ -94,7 +94,7 @@ class LLMRouter:
         prompt: str,
         provider_mode: ProviderMode | None,
     ) -> ProviderTestResponse:
-        selected_provider = self.select_provider_name("chat", provider_name if provider_mode is None else provider_mode)
+        selected_provider = self.select_provider_name("chat", provider_name)
         warnings: list[str] = []
         if selected_provider != provider_name:
             message = f"Requested {provider_name} but it is unavailable. Deterministic fallback remains available."
@@ -103,7 +103,7 @@ class LLMRouter:
                 ok=False,
                 message=message,
                 provider_metadata=self.build_metadata(
-                    provider_mode=provider_mode or provider_name,
+                    provider_mode=provider_name,
                     selected_provider=selected_provider,
                     warnings=warnings,
                 ),
@@ -121,7 +121,7 @@ class LLMRouter:
             ok=ok,
             message=message,
             provider_metadata=self.build_metadata(
-                provider_mode=provider_mode or provider_name,
+                provider_mode=provider_name,
                 selected_provider=provider_name,
                 warnings=warnings,
             ),

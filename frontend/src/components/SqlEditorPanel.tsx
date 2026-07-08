@@ -54,22 +54,22 @@ export function SqlEditorPanel({
         </div>
       ) : null}
       <div className="button-row wrap">
-        <button className="primary-button" onClick={onValidate} disabled={loading || !sql.trim()}>
+        <button className="primary-button" onClick={() => void onValidate()} disabled={loading || !sql.trim()}>
           Validate
         </button>
-        <button className="secondary-button" onClick={onExplain} disabled={loading || !sql.trim()}>
+        <button className="secondary-button" onClick={() => void onExplain()} disabled={loading || !sql.trim()}>
           Explain
         </button>
-        <button className="secondary-button" onClick={onFix} disabled={loading}>
+        <button className="secondary-button" onClick={() => void onFix()} disabled={loading}>
           Fix
         </button>
-        <button className="primary-button" onClick={onRun} disabled={loading || !sql.trim()}>
+        <button className="primary-button" onClick={() => void onRun()} disabled={loading || !sql.trim()}>
           Run read-only
         </button>
-        <button className="secondary-button" onClick={onOptimize} disabled={loading || !sql.trim()}>
+        <button className="secondary-button" onClick={() => void onOptimize()} disabled={loading || !sql.trim()}>
           Optimize
         </button>
-        <button className="secondary-button" onClick={onCopy} disabled={!sql.trim()}>
+        <button className="secondary-button" onClick={() => void onCopy()} disabled={!sql.trim()}>
           Copy SQL
         </button>
         <button className="secondary-button" onClick={onClear} disabled={loading || !sql.trim()}>

@@ -274,14 +274,14 @@ export default function App() {
 
   async function handleTestOpenAI() {
     await runOperation(async () => {
-      const response = await activeApi.testOpenAI(state.providerMode);
+      const response = await activeApi.testOpenAI();
       setBanner(response.message);
     });
   }
 
   async function handleTestLocal() {
     await runOperation(async () => {
-      const response = await activeApi.testLocal(state.providerMode);
+      const response = await activeApi.testLocal();
       setBanner(response.message);
     });
   }
