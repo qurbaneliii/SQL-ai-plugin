@@ -14,7 +14,7 @@ The workflow:
 
 - Runs on pushes to `main` and `master`.
 - Supports manual `workflow_dispatch`.
-- Installs Node 20.
+- Installs Node 22.
 - Installs frontend dependencies.
 - Runs `npm run typecheck --if-present`.
 - Runs `npm run lint --if-present`.
