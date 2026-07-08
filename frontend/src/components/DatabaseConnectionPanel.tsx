@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import type { DatabaseConnectResponse } from "../api/types";
 import { compactDatabaseUrl } from "../utils/formatters";
 import { StatusBadge } from "./StatusBadge";
@@ -21,6 +23,8 @@ export function DatabaseConnectionPanel({
   onConnect,
   onLoadSchema,
 }: DatabaseConnectionPanelProps) {
+  const [showUrl, setShowUrl] = useState(false);
+
   return (
     <div className="panel">
       <div className="panel-header">
@@ -30,13 +34,25 @@ export function DatabaseConnectionPanel({
         </div>
         {connection ? <StatusBadge label={connection.ok ? "Connected" : "Unavailable"} tone={connection.ok ? "success" : "warning"} /> : null}
       </div>
-      <textarea
-        className="input-area"
-        value={databaseUrl}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="postgresql://readonly_user@localhost:5432/my_database"
-        disabled={loading}
-      />
+      <label className="field-label">
+        PostgreSQL URL
+        <input
+          className="connection-input"
+          type={showUrl ? "text" : "password"}
+          value={databaseUrl}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="postgresql://readonly_user:password@localhost:5432/my_database"
+          disabled={loading}
+          autoComplete="off"
+          spellCheck={false}
+        />
+      </label>
+      <div className="button-row slim">
+        <button className="chip-button" type="button" onClick={() => setShowUrl((value) => !value)}>
+          {showUrl ? "Hide URL" : "Show URL"}
+        </button>
+        <span className="muted-text">{databaseUrl ? compactDatabaseUrl(databaseUrl.replace(/:[^:@/]+@/, ":****@")) : "No URL entered"}</span>
+      </div>
       <p className="security-note">
         Database URLs are sent only to your local/backend API. They are not stored in localStorage and are not sent directly to OpenAI.
       </p>

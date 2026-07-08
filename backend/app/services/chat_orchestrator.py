@@ -73,9 +73,10 @@ class ChatOrchestrator:
             raise ValueError(validation.blocked_reason or "Unsafe SQL was blocked before execution.")
         requested_limit = payload.rowLimit or self.settings.db_default_row_limit
         row_limit = max(1, min(requested_limit, self.settings.db_max_row_limit))
-        execution = self.db.execute_read_only(validation.suggested_sql, payload.databaseUrl, row_limit)
+        execution_sql = self.validator.enforce_limit(validation.suggested_sql, row_limit)
+        execution = self.db.execute_read_only(execution_sql, payload.databaseUrl, row_limit)
         execution.sql = payload.sql
-        execution.normalized_sql = validation.suggested_sql
+        execution.normalized_sql = execution_sql
         execution.row_limit = row_limit
         execution.warnings = validation.warnings
         execution.provider_metadata = self.router.build_metadata(
@@ -265,5 +266,9 @@ class ChatOrchestrator:
         return [
             ChatAction(type="copy_sql", label="Copy SQL"),
             ChatAction(type="validate_sql", label="Validate SQL"),
+            ChatAction(type="explain_sql", label="Explain"),
+            ChatAction(type="fix_sql", label="Fix"),
             ChatAction(type="run_readonly", label="Run read-only"),
+            ChatAction(type="optimize_sql", label="Optimize"),
+            ChatAction(type="summarize_results", label="Summarize"),
         ]

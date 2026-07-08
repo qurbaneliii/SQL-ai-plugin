@@ -14,8 +14,10 @@ export function MessageBubble({ entry, onAction }: MessageBubbleProps) {
           { type: "copy_sql", label: "Copy SQL" },
           { type: "validate_sql", label: "Validate" },
           { type: "explain_sql", label: "Explain" },
+          { type: "fix_sql", label: "Fix" },
           { type: "run_readonly", label: "Run read-only" },
           { type: "optimize_sql", label: "Optimize" },
+          { type: "summarize_results", label: "Summarize" },
         ];
 
   return (

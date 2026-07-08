@@ -42,7 +42,15 @@ export function SqlEditorPanel({
         <div className="editor-validation">
           <span>{safety.is_readonly ? "Read-only" : "Not read-only"}</span>
           <span>{safety.is_valid ? "Valid" : "Blocked"}</span>
-          {safety.blocked_reason ? <span>{safety.blocked_reason}</span> : null}
+          <span>{safety.detected_statement_type}</span>
+          {safety.blocked_reason ? <span className="blocked-reason">{safety.blocked_reason}</span> : null}
+          {safety.referenced_tables.length ? <span>Tables: {safety.referenced_tables.join(", ")}</span> : null}
+        </div>
+      ) : null}
+      {safety?.suggested_sql && safety.suggested_sql !== safety.normalized_sql ? (
+        <div className="suggested-sql">
+          <div className="muted-text">Bounded execution SQL</div>
+          <code>{safety.suggested_sql}</code>
         </div>
       ) : null}
       <div className="button-row wrap">

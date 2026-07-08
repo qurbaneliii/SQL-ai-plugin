@@ -9,6 +9,29 @@ interface ResultTableProps {
 }
 
 export function ResultTable({ result, onSummarize }: ResultTableProps) {
+  async function copyJson() {
+    if (!result) {
+      return;
+    }
+    await navigator.clipboard.writeText(JSON.stringify(result.rows, null, 2));
+  }
+
+  async function copyCsv() {
+    if (!result) {
+      return;
+    }
+    const header = result.columns.join(",");
+    const rows = result.rows.map((row) =>
+      result.columns
+        .map((column) => {
+          const value = formatValue(row[column]).replace(/"/g, '""');
+          return value.includes(",") || value.includes("\n") ? `"${value}"` : value;
+        })
+        .join(",")
+    );
+    await navigator.clipboard.writeText([header, ...rows].join("\n"));
+  }
+
   return (
     <div className="panel">
       <div className="panel-header">
@@ -18,6 +41,12 @@ export function ResultTable({ result, onSummarize }: ResultTableProps) {
         </div>
         <div className="panel-actions">
           {result ? <StatusBadge label={result.truncated ? "Truncated" : "Complete"} tone={result.truncated ? "warning" : "success"} /> : null}
+          <button className="secondary-button" onClick={() => void copyJson()} disabled={!result}>
+            Copy JSON
+          </button>
+          <button className="secondary-button" onClick={() => void copyCsv()} disabled={!result}>
+            Copy CSV
+          </button>
           <button className="secondary-button" onClick={onSummarize} disabled={!result}>
             Summarize
           </button>

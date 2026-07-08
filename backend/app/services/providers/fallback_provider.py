@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from pydantic import BaseModel
@@ -32,6 +33,14 @@ class FallbackProvider(LLMProvider):
 
     def _build_payload(self, prompt: str) -> dict[str, Any]:
         text = prompt.lower()
+        if "generate safe postgresql sql" in text:
+            table = self._first_context_table(prompt)
+            sql = f"SELECT * FROM {table} LIMIT 100" if table else "SELECT 1 AS sample_value LIMIT 1"
+            return {
+                "content": "Fallback mode generated a conservative read-only starting point. Review table and column names before running it.",
+                "sql": sql,
+                "warnings": ["Fallback mode cannot infer full business semantics."],
+            }
         if "optimiz" in text:
             return {
                 "content": "Fallback mode suggests checking predicates, indexes, and whether the query can use a narrower SELECT list or stricter filters.",
@@ -64,6 +73,10 @@ class FallbackProvider(LLMProvider):
             }
         return {
             "content": "Fallback mode generated a conservative read-only starting point. Review table and column names before running it.",
-            "sql": "SELECT * FROM your_table LIMIT 100",
+            "sql": "SELECT 1 AS sample_value LIMIT 1",
             "warnings": ["Fallback mode cannot infer the exact schema semantics."],
         }
+
+    def _first_context_table(self, prompt: str) -> str | None:
+        match = re.search(r"^-\s+([a-zA-Z_][\w]*\.[a-zA-Z_][\w]*)\s+\[", prompt, re.MULTILINE)
+        return match.group(1) if match else None

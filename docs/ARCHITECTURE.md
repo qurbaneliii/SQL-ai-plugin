@@ -14,11 +14,11 @@ The FastAPI backend exposes health, LLM status/testing, database connection/sche
 
 ## OpenAI Provider
 
-`OpenAIProvider` uses the official OpenAI Python SDK, reads `OPENAI_API_KEY` from the backend environment, supports health checks, text generation, JSON generation, and one JSON repair attempt.
+`OpenAIProvider` uses the official OpenAI Python SDK and reads `OPENAI_API_KEY` from the backend environment. JSON tasks first try structured output through the Responses API, then fall back to strict JSON instructions, Pydantic validation, and one JSON repair attempt when the selected model/API does not support the structured path.
 
 ## Ollama Provider
 
-`OllamaProvider` uses the OpenAI-compatible Ollama endpoint at `http://localhost:11434/v1`, supports health checks, text generation, JSON generation, and one JSON repair attempt.
+`OllamaProvider` uses the OpenAI-compatible Ollama endpoint at `http://localhost:11434/v1`. Availability is a real cached probe against chat completions for the configured model, not merely the existence of a client object. Missing or stopped Ollama falls back safely.
 
 ## Fallback Provider
 
@@ -30,11 +30,15 @@ The FastAPI backend exposes health, LLM status/testing, database connection/sche
 
 ## SQL Safety Layer
 
-`SQLSafetyValidator` uses `sqlglot` to parse PostgreSQL SQL, detect statement shape, block non-read-only operations, warn on risky query patterns, and suggest a bounded `LIMIT` when missing.
+`SQLSafetyValidator` uses `sqlglot` to parse PostgreSQL SQL, detect statement shape, block non-read-only operations, block known side-effect functions, warn on risky query patterns, and suggest or enforce a bounded `LIMIT`.
 
 ## Database Adapter
 
-`PostgresService` manages connection testing, schema introspection, masked database URLs, read-only execution, safe serialization, and statement timeout setup.
+`PostgresService` manages connection testing, schema introspection, masked database URLs, read-only execution, safe serialization, sanitized database errors, and statement timeout setup. Read-only execution fetches at most the requested row cap plus one row to detect truncation instead of fetching the full result set.
+
+## Schema Context Builder
+
+`schema_context_text` ranks selected tables first, then keyword-matched tables and columns from the user request. It emits compact table context with columns, primary keys, foreign key hints, indexes, comments, row estimates, and sensitive-column warnings. If the schema is truncated or no relevant tables are found, the prompt instructs the assistant to ask the user to narrow context.
 
 ## Schema Browser
 

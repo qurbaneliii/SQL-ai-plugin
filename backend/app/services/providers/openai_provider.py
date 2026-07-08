@@ -52,6 +52,30 @@ class OpenAIProvider(LLMProvider):
         user_prompt: str,
         response_model: type[BaseModel] | None = None,
     ) -> dict[str, Any]:
+        if response_model is not None and self.client:
+            try:
+                response = await self.client.responses.create(
+                    model=self.model_name,
+                    input=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    text={
+                        "format": {
+                            "type": "json_schema",
+                            "name": response_model.__name__,
+                            "schema": response_model.model_json_schema(),
+                            "strict": True,
+                        }
+                    },
+                )
+                return parse_json_payload(response.output_text, response_model)
+            except Exception:
+                # Some models or compatible endpoints may not support Responses API
+                # structured outputs. Fall back to strict JSON instructions plus
+                # Pydantic validation and a single repair pass.
+                pass
+
         raw = await self.generate_text(
             system_prompt=f"{system_prompt}\nReturn strict JSON only.",
             user_prompt=user_prompt,

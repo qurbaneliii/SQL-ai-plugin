@@ -74,3 +74,14 @@ def test_cross_join_warning() -> None:
 def test_sensitive_column_warning() -> None:
     result = validator.validate("SELECT email FROM users LIMIT 10")
     assert any("sensitive" in warning.lower() for warning in result.warnings)
+
+
+def test_side_effect_function_blocked() -> None:
+    result = validator.validate("SELECT dblink_connect('dbname=other') LIMIT 1")
+    assert result.is_valid is False
+    assert result.blocked_reason is not None
+
+
+def test_enforce_limit_reduces_large_limit() -> None:
+    limited = validator.enforce_limit("SELECT id FROM users LIMIT 5000", 25)
+    assert "LIMIT 25" in limited

@@ -89,6 +89,8 @@ class SQLSafetyValidator:
             blocked_reason = "SECURITY DEFINER statements are blocked."
         elif "SET ROLE" in normalized.upper() or normalized.upper().startswith("VACUUM"):
             blocked_reason = "Administrative statements are blocked."
+        elif self._uses_side_effect_function(expression):
+            blocked_reason = "Known side-effect functions are blocked in read-only mode."
 
         if "SELECT *" in normalized.upper():
             warnings.append("SELECT * can expose unnecessary columns and increase result size.")
@@ -101,7 +103,7 @@ class SQLSafetyValidator:
         if self._uses_side_effect_function(expression):
             warnings.append("Query calls functions that may have side effects.")
 
-        suggested_sql = self._ensure_limit(expression)
+        suggested_sql = self._ensure_limit(expression, self.settings.db_default_row_limit)
         if suggested_sql != normalized:
             warnings.append("Query had no LIMIT, so a bounded LIMIT was suggested.")
 
@@ -138,20 +140,41 @@ class SQLSafetyValidator:
             return self._is_explain_command(expression.sql(dialect="postgres", pretty=False))
         return False
 
-    def _ensure_limit(self, expression: exp.Expression) -> str:
+    def enforce_limit(self, sql: str, row_limit: int) -> str:
+        expression = parse_one(sql.strip().rstrip(";"), dialect="postgres")
+        return self._ensure_limit(expression, row_limit)
+
+    def _ensure_limit(self, expression: exp.Expression, row_limit: int) -> str:
         copied = expression.copy()
         if copied.key.upper() == "COMMAND":
             return copied.sql(dialect="postgres", pretty=False)
         target = copied
         if isinstance(target, exp.With) and target.this is not None:
             target = target.this
-        if isinstance(target, exp.Select) and not target.args.get("limit"):
-            target.set("limit", exp.Limit(expression=exp.Literal.number(self.settings.db_default_row_limit)))
+        if isinstance(target, exp.Select):
+            self._set_limit_if_needed(target, row_limit)
             return copied.sql(dialect="postgres", pretty=False)
-        if isinstance(target, (exp.Union, exp.Intersect, exp.Except)) and not target.args.get("limit"):
-            target.set("limit", exp.Limit(expression=exp.Literal.number(self.settings.db_default_row_limit)))
+        if isinstance(target, (exp.Union, exp.Intersect, exp.Except)):
+            self._set_limit_if_needed(target, row_limit)
             return copied.sql(dialect="postgres", pretty=False)
         return copied.sql(dialect="postgres", pretty=False)
+
+    def _set_limit_if_needed(self, expression: exp.Expression, row_limit: int) -> None:
+        current_limit = expression.args.get("limit")
+        current_value = self._literal_limit_value(current_limit) if current_limit is not None else None
+        if current_limit is None or current_value is None or current_value > row_limit:
+            expression.set("limit", exp.Limit(expression=exp.Literal.number(row_limit)))
+
+    def _literal_limit_value(self, limit_expression: exp.Expression | None) -> int | None:
+        if not isinstance(limit_expression, exp.Limit):
+            return None
+        expression = limit_expression.args.get("expression")
+        if isinstance(expression, exp.Literal) and expression.is_number:
+            try:
+                return int(expression.this)
+            except ValueError:
+                return None
+        return None
 
     def _contains_sensitive_columns(self, expression: exp.Expression) -> bool:
         patterns = self.settings.sensitive_column_patterns

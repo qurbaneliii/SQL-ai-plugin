@@ -72,6 +72,8 @@ Demo mode does not require:
 
 It clearly displays that sample data is being used.
 
+For real OpenAI, Ollama, or PostgreSQL testing, run the FastAPI backend and the Vite frontend locally. Some browsers restrict HTTPS GitHub Pages pages from calling a local HTTP backend, even though the backend CORS policy includes the Pages origin.
+
 ## Backend Deployment Limitation
 
 FastAPI, PostgreSQL, OpenAI provider routing, and Ollama provider routing require a backend runtime. GitHub Pages cannot run those services.

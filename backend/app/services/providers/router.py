@@ -97,10 +97,20 @@ class LLMRouter:
         selected_provider = self.select_provider_name("chat", provider_name if provider_mode is None else provider_mode)
         warnings: list[str] = []
         if selected_provider != provider_name:
-            warnings.append(f"Requested {provider_name} but router used fallback because the provider is unavailable.")
-        provider = self.get_provider(selected_provider)
+            message = f"Requested {provider_name} but it is unavailable. Deterministic fallback remains available."
+            warnings.append(message)
+            return ProviderTestResponse(
+                ok=False,
+                message=message,
+                provider_metadata=self.build_metadata(
+                    provider_mode=provider_mode or provider_name,
+                    selected_provider=selected_provider,
+                    warnings=warnings,
+                ),
+            )
+        provider = self.get_provider(provider_name)
         ok, message = await provider.health_check()
-        if ok and selected_provider != "fallback":
+        if ok:
             try:
                 sample = await provider.generate_text(system_prompt="Reply briefly.", user_prompt=prompt)
                 message = sample.strip() or message
@@ -112,7 +122,7 @@ class LLMRouter:
             message=message,
             provider_metadata=self.build_metadata(
                 provider_mode=provider_mode or provider_name,
-                selected_provider=selected_provider,
+                selected_provider=provider_name,
                 warnings=warnings,
             ),
         )

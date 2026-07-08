@@ -28,8 +28,9 @@ The app combines a FastAPI backend, a React + TypeScript frontend, a PostgreSQL 
 2. `python -m venv .venv`
 3. `.\.venv\Scripts\activate` on Windows, or `source .venv/bin/activate` on macOS/Linux
 4. `pip install -r requirements.txt`
-5. Create `backend/.env` from your deployment values.
-6. `uvicorn app.main:app --reload --port 8000`
+5. `copy .env.example .env` on Windows, or `cp .env.example .env` on macOS/Linux.
+6. Edit `backend/.env`. Keep OpenAI keys and database URLs backend-only.
+7. `uvicorn app.main:app --reload --port 8000`
 
 The backend exposes `/health`, `/api/llm/status`, `/api/db/*`, `/api/sql/*`, `/api/chat/*`, and `/api/result/summarize`.
 
@@ -76,6 +77,8 @@ To force demo mode locally, set `VITE_DEMO_MODE=true`.
 
 The frontend never calls OpenAI or Ollama directly. All AI operations go through the FastAPI backend.
 
+Provider responses include metadata showing requested mode, selected provider, model, fallback state, and warnings. In `auto`, generation/fix/optimization prefer OpenAI, then local, then fallback; explanation/schema/result summary prefer local, then OpenAI, then fallback.
+
 ## OpenAI Setup
 
 - Add `OPENAI_API_KEY` to the backend environment only.
@@ -84,6 +87,8 @@ The frontend never calls OpenAI or Ollama directly. All AI operations go through
 - Test from the UI provider panel or with `POST /api/llm/test-openai`.
 
 Do not put OpenAI keys in `frontend/.env`.
+
+The OpenAI provider uses structured JSON output when the selected model/API supports it. If structured output is unavailable, the backend falls back to strict JSON instructions, Pydantic validation, and one JSON repair attempt.
 
 ## Ollama Local Setup
 
@@ -94,6 +99,8 @@ Do not put OpenAI keys in `frontend/.env`.
 5. Keep `LOCAL_LLM_BASE_URL=http://localhost:11434/v1` unless customized.
 6. Test from the UI provider panel or with `POST /api/llm/test-local`.
 
+The local provider is considered available only after the backend confirms the Ollama-compatible chat-completions endpoint can return a model response.
+
 ## PostgreSQL Connection
 
 Use one of these options:
@@ -103,6 +110,8 @@ Use one of these options:
 - Pass `--database-url` to `scripts/valentina_bridge.py`.
 
 Database URLs are sent only to the backend API. The frontend does not store database passwords in localStorage.
+
+Use a read-only PostgreSQL user for real testing. The backend validates SQL before DB access, starts read-only sessions, applies statement timeouts, injects or reduces `LIMIT` where safe, and fetches only up to the requested row cap plus one extra row to detect truncation.
 
 ## GitHub Pages Deployment
 
