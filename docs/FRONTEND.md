@@ -17,13 +17,13 @@ The frontend is a Vite + React + TypeScript app under `frontend/`. It is a stand
 ## Components
 
 - `Layout`: desktop sidebar plus main workspace layout.
-- `ChatPanel`, `MessageBubble`, `PromptInput`: chatbot workflow, example prompts, SQL blocks, copy/validate/explain/run/optimize actions.
-- `DatabaseConnectionPanel`: PostgreSQL URL input, connection test, schema load, masked connection display, and security note.
-- `ProviderStatusPanel`: provider mode selector and OpenAI/local/fallback status.
-- `SchemaBrowser`: schemas, tables, columns, data types, and table selection for context.
+- `ChatPanel`, `MessageBubble`, `PromptInput`: chatbot workflow, example prompts, SQL blocks, copy/validate/explain/fix/run/optimize/summarize actions.
+- `DatabaseConnectionPanel`: hidden PostgreSQL URL input, connection test, schema load, masked connection display, and security note.
+- `ProviderStatusPanel`: provider mode selector, OpenAI/local/fallback status, model names, local provider, and router route hint.
+- `SchemaBrowser`: schemas, tables, columns, data types, primary keys, foreign-key hints, index counts, sensitive columns, and table selection for context.
 - `SqlEditorPanel`: SQL textarea and actions for validate, explain, fix, run read-only, optimize, copy, and clear.
 - `SafetyWarnings`: risk level, statement type, blocked reason, and validation warnings.
-- `ResultTable`: columns, rows, row count, truncation state, execution time, and summarize action.
+- `ResultTable`: columns, rows, row count, truncation state, execution time, copy JSON, copy CSV, and summarize action.
 - `CommandHelp`: supported command list.
 - `StatusBadge`, `EmptyState`: small reusable UI primitives.
 
@@ -76,6 +76,8 @@ GitHub Pages deployment relies on this behavior because Pages cannot run the Fas
 Do not add OpenAI keys, database passwords, or other secrets to frontend env files.
 
 ## Local Development
+
+Vite 8 requires Node.js 20.19+ or 22.12+.
 
 ```bash
 cd frontend

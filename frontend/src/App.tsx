@@ -14,6 +14,7 @@ import { SchemaBrowser } from "./components/SchemaBrowser";
 import { SqlEditorPanel } from "./components/SqlEditorPanel";
 import { StatusBadge } from "./components/StatusBadge";
 import { initialState } from "./state/appStore";
+import { compactDatabaseUrl } from "./utils/formatters";
 import { demoResult, demoSchema, demoValidation } from "./utils/sampleData";
 
 const demoPreference = (import.meta.env.VITE_DEMO_MODE ?? "auto").toLowerCase();
@@ -42,7 +43,8 @@ export default function App() {
     }
 
     try {
-      const [health, llm, cmds] = await Promise.all([api.getHealth(), api.getLLMStatus(), api.getChatCommands()]);
+      const health = await api.getHealth();
+      const [llm, cmds] = await Promise.all([api.getLLMStatus(), api.getChatCommands()]);
       setState((current) => ({
         ...current,
         backendOnline: true,
@@ -261,21 +263,25 @@ export default function App() {
       await handleLoadSchema();
     } else if (actionType === "explain_sql") {
       await handleExplain(targetSql);
+    } else if (actionType === "fix_sql") {
+      await handleFix(targetSql);
     } else if (actionType === "optimize_sql") {
       await handleOptimize(targetSql);
+    } else if (actionType === "summarize_results") {
+      await handleSummarize();
     }
   }
 
   async function handleTestOpenAI() {
     await runOperation(async () => {
-      const response = await activeApi.testOpenAI(state.providerMode);
+      const response = await activeApi.testOpenAI();
       setBanner(response.message);
     });
   }
 
   async function handleTestLocal() {
     await runOperation(async () => {
-      const response = await activeApi.testLocal(state.providerMode);
+      const response = await activeApi.testLocal();
       setBanner(response.message);
     });
   }
@@ -292,14 +298,40 @@ export default function App() {
   return (
     <div>
       <header className="topbar">
-        <div>
-          <div className="product-kicker">Standalone SQL sidecar</div>
+        <div className="brand-block">
+          <div className="product-kicker">Standalone PostgreSQL sidecar</div>
           <h1>SQL AI Copilot</h1>
           <p>PostgreSQL-focused chat, safety validation, schema context, and read-only result previews.</p>
         </div>
-        <div className="topbar-status">
-          <StatusBadge label={state.demoMode ? "Demo Mode" : "Backend Mode"} tone={state.demoMode ? "demo" : "success"} />
-          <StatusBadge label={`Provider: ${state.providerMode}`} tone={state.providerMode === "fallback" ? "warning" : "neutral"} />
+        <div className="topbar-status" aria-label="Command bar">
+          <div className="topbar-badges">
+            <StatusBadge label={state.demoMode ? "Demo Mode" : "Backend Mode"} tone={state.demoMode ? "demo" : "success"} />
+            <StatusBadge label={state.backendOnline ? "API Online" : "API Offline"} tone={state.backendOnline ? "success" : "warning"} />
+            <StatusBadge
+              label={state.connection?.ok ? `DB ${compactDatabaseUrl(state.connection.masked_database_url)}` : "DB not connected"}
+              tone={state.connection?.ok ? "success" : "neutral"}
+            />
+          </div>
+          <div className="command-strip">
+            <label className="command-select">
+              <span>Provider</span>
+              <select value={state.providerMode} onChange={(e) => setState((current) => ({ ...current, providerMode: e.target.value as ProviderMode }))} disabled={busy}>
+                <option value="auto">Auto</option>
+                <option value="openai">OpenAI</option>
+                <option value="local">Local</option>
+                <option value="fallback">Fallback</option>
+              </select>
+            </label>
+            <button className="secondary-button compact-button" onClick={() => void handleLoadSchema()} disabled={busy}>
+              Load schema
+            </button>
+            <button className="secondary-button compact-button" onClick={() => void handleValidate()} disabled={busy || !state.currentSql.trim()}>
+              Validate
+            </button>
+            <button className="primary-button compact-button" onClick={() => void handleRun()} disabled={busy || !state.currentSql.trim()}>
+              Run read-only
+            </button>
+          </div>
           <div className="banner">{banner}</div>
         </div>
       </header>

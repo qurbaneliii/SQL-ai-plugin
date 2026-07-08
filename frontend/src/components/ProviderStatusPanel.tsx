@@ -48,7 +48,14 @@ export function ProviderStatusPanel({
           <div><span>Local Ollama</span><StatusBadge label={status.local_available ? `Ready: ${status.local_model}` : "Unavailable"} tone={status.local_available ? "success" : "neutral"} /></div>
           <div><span>Fallback</span><StatusBadge label={status.fallback_available ? "Ready" : "Unavailable"} tone={status.fallback_available ? "success" : "danger"} /></div>
           <div><span>Router now</span><StatusBadge label={status.effective_mode} tone={status.effective_mode === "fallback" ? "warning" : "success"} /></div>
+          <div><span>OpenAI model</span><code>{status.openai_model}</code></div>
+          <div><span>Local provider</span><code>{status.local_provider}</code></div>
           {lastProvider ? <div><span>Last response</span><StatusBadge label={lastProvider} tone={lastProvider === "fallback" ? "warning" : "success"} /></div> : null}
+        </div>
+      ) : null}
+      {status?.router_preferences ? (
+        <div className="router-hint">
+          Auto chat route: {(status.router_preferences.chat ?? ["fallback"]).join(" -> ")}
         </div>
       ) : null}
       {demoMode || status?.effective_mode === "fallback" ? (

@@ -44,12 +44,16 @@ class PostgresService:
     def connect(self, database_url: str | None = None, *, readonly: bool = False) -> Iterable[psycopg.Connection]:
         resolved = self.resolve_database_url(database_url)
         dsn = self._dsn_with_timeout(resolved)
-        with psycopg.connect(dsn) as conn:
-            with conn.cursor() as cur:
-                cur.execute(f"SET statement_timeout = {int(self.settings.db_statement_timeout_ms)}")
-                if readonly:
-                    cur.execute("SET default_transaction_read_only = on")
-            yield conn
+        try:
+            with psycopg.connect(dsn) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"SET statement_timeout = {int(self.settings.db_statement_timeout_ms)}")
+                    if readonly:
+                        cur.execute("SET default_transaction_read_only = on")
+                conn.commit()
+                yield conn
+        except psycopg.Error as exc:
+            raise ValueError(self._sanitize_db_error(exc, resolved)) from exc
 
     def test_connection(self, database_url: str | None = None) -> DatabaseConnectResponse:
         resolved = self.resolve_database_url(database_url)
@@ -273,23 +277,30 @@ class PostgresService:
 
     def execute_read_only(self, sql: str, database_url: str | None = None, row_limit: int | None = None) -> QueryExecutionResponse:
         resolved = self.resolve_database_url(database_url)
+        limit = max(1, min(row_limit or self.settings.db_default_row_limit, self.settings.db_max_row_limit))
         started = time.perf_counter()
         with self.connect(resolved, readonly=True) as conn:
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(sql)
-                rows = cur.fetchall()
+                rows = cur.fetchmany(limit + 1)
                 columns = [item.name for item in cur.description] if cur.description else []
         execution_time_ms = int((time.perf_counter() - started) * 1000)
-        safe_rows = [make_json_safe(row) for row in rows]
-        capped_rows = safe_rows[:row_limit] if row_limit else safe_rows
+        truncated = len(rows) > limit
+        safe_rows = [make_json_safe(row) for row in rows[:limit]]
         return QueryExecutionResponse(
             sql=sql,
             normalized_sql=sql,
-            row_limit=row_limit or len(capped_rows) or self.settings.db_default_row_limit,
+            row_limit=limit,
             columns=columns,
-            rows=capped_rows,
-            row_count=len(capped_rows),
-            truncated=bool(row_limit and len(safe_rows) > row_limit),
+            rows=safe_rows,
+            row_count=len(safe_rows),
+            truncated=truncated,
             execution_time_ms=execution_time_ms,
             warnings=[],
         )
+
+    def _sanitize_db_error(self, exc: Exception, database_url: str) -> str:
+        message = str(exc).splitlines()[0] if str(exc) else exc.__class__.__name__
+        masked = mask_database_url(database_url) or "DATABASE_URL"
+        message = message.replace(database_url, masked)
+        return f"Database operation failed: {message}"

@@ -25,13 +25,31 @@ export function SchemaBrowser({ schema, selectedTables, onToggleTable }: SchemaB
         return (
           <label className="schema-item" key={fullName}>
             <input type="checkbox" checked={checked} onChange={() => onToggleTable(fullName)} />
-            <div>
-              <div className="schema-name">{fullName}</div>
-              <div className="muted-text">
-                {table.columns.slice(0, 4).map((column) => `${column.name}: ${column.data_type}`).join(", ")}
-                {table.columns.length > 4 ? " ..." : ""}
+            <div className="schema-detail">
+              <div className="schema-title-row">
+                <div className="schema-name">{fullName}</div>
+                <span className="schema-count">{table.approximate_row_count?.toLocaleString() ?? "?"} rows</span>
               </div>
-              {table.foreign_keys.length ? <div className="muted-text">{table.foreign_keys.length} relationship hints</div> : null}
+              <div className="column-list">
+                {table.columns.slice(0, 8).map((column) => (
+                  <span
+                    className={`column-pill ${table.sensitive_columns.includes(column.name) ? "sensitive" : ""}`}
+                    key={`${fullName}.${column.name}`}
+                    title={column.comment ?? undefined}
+                  >
+                    {column.name}:{column.data_type}
+                  </span>
+                ))}
+                {table.columns.length > 8 ? <span className="column-pill muted">+{table.columns.length - 8}</span> : null}
+              </div>
+              <div className="schema-meta-row">
+                {table.primary_key.length ? <span>PK {table.primary_key.join(", ")}</span> : null}
+                {table.foreign_keys.length ? <span>{table.foreign_keys.length} FK hints</span> : null}
+                {table.indexes.length ? <span>{table.indexes.length} indexes</span> : null}
+              </div>
+              {table.sensitive_columns.length ? (
+                <div className="sensitive-note">Sensitive columns: {table.sensitive_columns.join(", ")}</div>
+              ) : null}
             </div>
           </label>
         );

@@ -42,26 +42,34 @@ export function SqlEditorPanel({
         <div className="editor-validation">
           <span>{safety.is_readonly ? "Read-only" : "Not read-only"}</span>
           <span>{safety.is_valid ? "Valid" : "Blocked"}</span>
-          {safety.blocked_reason ? <span>{safety.blocked_reason}</span> : null}
+          <span>{safety.detected_statement_type}</span>
+          {safety.blocked_reason ? <span className="blocked-reason">{safety.blocked_reason}</span> : null}
+          {safety.referenced_tables.length ? <span>Tables: {safety.referenced_tables.join(", ")}</span> : null}
+        </div>
+      ) : null}
+      {safety?.suggested_sql && safety.suggested_sql !== safety.normalized_sql ? (
+        <div className="suggested-sql">
+          <div className="muted-text">Bounded execution SQL</div>
+          <code>{safety.suggested_sql}</code>
         </div>
       ) : null}
       <div className="button-row wrap">
-        <button className="primary-button" onClick={onValidate} disabled={loading || !sql.trim()}>
+        <button className="primary-button" onClick={() => void onValidate()} disabled={loading || !sql.trim()}>
           Validate
         </button>
-        <button className="secondary-button" onClick={onExplain} disabled={loading || !sql.trim()}>
+        <button className="secondary-button" onClick={() => void onExplain()} disabled={loading || !sql.trim()}>
           Explain
         </button>
-        <button className="secondary-button" onClick={onFix} disabled={loading}>
+        <button className="secondary-button" onClick={() => void onFix()} disabled={loading}>
           Fix
         </button>
-        <button className="primary-button" onClick={onRun} disabled={loading || !sql.trim()}>
+        <button className="primary-button" onClick={() => void onRun()} disabled={loading || !sql.trim()}>
           Run read-only
         </button>
-        <button className="secondary-button" onClick={onOptimize} disabled={loading || !sql.trim()}>
+        <button className="secondary-button" onClick={() => void onOptimize()} disabled={loading || !sql.trim()}>
           Optimize
         </button>
-        <button className="secondary-button" onClick={onCopy} disabled={!sql.trim()}>
+        <button className="secondary-button" onClick={() => void onCopy()} disabled={!sql.trim()}>
           Copy SQL
         </button>
         <button className="secondary-button" onClick={onClear} disabled={loading || !sql.trim()}>
